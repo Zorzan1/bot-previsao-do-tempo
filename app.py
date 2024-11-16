@@ -1,2 +1,4 @@
 import selenium
 
+print('teste')
+
