@@ -67,76 +67,70 @@ def extrair_dados_do_site():
         temperaturas_min.append(elementos_temp_min[i].text)
         status_tempo.append(elementos_status[i].text)
 
+
     driver.close()
     
-    return dias, temperaturas_max, temperaturas_min, temperaturas, status_tempo
+    return dias, temperaturas, temperaturas_max, temperaturas_min, status_tempo
 
-def gerar_html(dias, temperaturas_max, temperaturas_min, temperaturas, status_tempo):
-    linhas = ""
-    for i in range(len(dias)):
-        linhas += f"<tr><td>{dias[i]}</td><td>{temperaturas[i]}</td><td>{temperaturas_max[i]}</td><td>{temperaturas_min[i]}</td><td>{status_tempo[i]}</td></tr>\n"
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Previsão do Tempo</title>
-        <style>
-            table {{
-                width: 100%;
-                border-collapse: collapse;
-            }}
-            th, td {{
-                border: 1px solid #ddd;
-                padding: 8px;
-                text-align: center;
-            }}
-            th {{
-                background-color: #f2f2f2;
-            }}
-        </style>
-    </head>
-    <body>
-        <h2>Previsão do Tempo</h2>
-        <table>
-            <tr>
-                <th>Dia</th>
-                <th>Temperatura</th>
-                <th>Máxima</th>
-                <th>Mínima</th>
-                <th>Status</th>
-            </tr>
-            {linhas}
-        </table>
-    </body>
+def formatar_html_para_email(dias, temperaturas, temperaturas_max, temperaturas_min, status_tempo):
+    html = f"""
+    <html>
+        <head></head>
+        <body>
+            <h2>Previsão do Tempo para os Próximos Dias</h2>
+            <table border="1" cellpadding="5" cellspacing="0">
+                <tr>
+                    <th>Dia</th>
+                    <th>Período</th>
+                    <th>Temperatura Máxima</th>
+                    <th>Temperatura Mínima</th>
+                    <th>Status do Tempo</th>
+                </tr>
+                {''.join(
+                    f"<tr><td>{dias[i]}</td><td>{temperaturas[i]}</td>"
+                    f"<td>{temperaturas_max[i]}</td><td>{temperaturas_min[i]}</td>"
+                    f"<td>{status_tempo[i]}</td></tr>"
+                    for i in range(len(dias))
+                )}
+            </table>
+        </body>
     </html>
     """
-    return html_content
+    return html
 
-def enviar_email(html_content):
+def enviar_email():
+    # Configurações de login
     EMAIL_ADDRESS = os.getenv('EMAIL_ADDRESS')
     EMAIL_PASSWORD = os.getenv('EMAIL_PASSWORD')
 
-    if not EMAIL_ADDRESS or not EMAIL_PASSWORD:
-        raise ValueError("Credenciais de e-mail não definidas nas variáveis de ambiente.")
-
+    # Extrair dados
+    dias, temperaturas, temperaturas_max, temperaturas_min, status_tempo = extrair_dados_do_site()
+    
+    # Formatar HTML
+    mensagem = formatar_html_para_email(dias, temperaturas, temperaturas_max, temperaturas_min, status_tempo)
+    
+    # Criar e enviar um email
+    destinatario = input('Qual e-mail enviar? ')
     mail = EmailMessage()
-    mail['Subject'] = 'Previsão do Tempo Atualizada'
+    mail['Subject'] = 'Previsão do Tempo'
     mail['From'] = EMAIL_ADDRESS
-    mail['To'] = 'zbalcassabaptista@gmail.com'
-    mail.set_content(html_content, subtype='html')
+    mail['To'] = destinatario
+    mail.set_content(mensagem, subtype='html')  # define o conteúdo como HTML e mantém o UTF-8 automaticamente
 
+    # Enviar o email
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as email:
         email.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
         email.send_message(mail)
 
-
 if __name__ == "__main__":
-    dias, temperaturas_max, temperaturas_min, temperaturas, status_tempo = extrair_dados_do_site()
-    html_content = gerar_html(dias, temperaturas_max, temperaturas_min, temperaturas, status_tempo)
-    enviar_email(html_content)
+    enviar_email()
+
+    
+
+
+
+
+
 
 
 
